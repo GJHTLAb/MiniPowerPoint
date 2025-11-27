@@ -28,21 +28,21 @@ public class MainWindow extends JFrame {
         this.toolController = new ToolController();
         this.commandManager = new CommandManager();
         this.fileController = new FileController();
-
-        this.canvasController = new CanvasController(context, canvas, selectionManager, toolController, commandManager);
+        SlideListPanel SLpanel = new SlideListPanel(context, canvas);
+        this.canvasController = new CanvasController(context, SLpanel, canvas, selectionManager, toolController, commandManager);
 
         setTitle("MiniPowerPoint- 幻灯片制作软件");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(1200, 800);
+        setSize(new Dimension(1200,800));
         setLocationRelativeTo(null);
+        setResizable(false);
 
         setLayout(new BorderLayout());
 
         setJMenuBar(new MenuBarView(commandManager, canvas, context, fileController, this));
 
         add(new ToolBarView(canvas, toolController), BorderLayout.NORTH);
-
-        add(new SlideListPanel(context, canvas), BorderLayout.WEST);
+        add(SLpanel, BorderLayout.WEST);
 
         add(canvas, BorderLayout.CENTER);
 

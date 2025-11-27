@@ -35,4 +35,8 @@ public class SlideDocument {
     public List<SlidePage> getPages() {
         return pages;
     }
+
+    public int getCurrentPageIndex() {
+        return currentPageIndex;
+    }
 }

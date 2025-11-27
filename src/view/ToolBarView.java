@@ -15,7 +15,6 @@ public class ToolBarView extends JToolBar {
     public ToolBarView(SlideCanvas canvas, ToolController toolController) {
         this.canvas = canvas;
         this.toolController = toolController;
-
         setFloatable(false);
         setLayout(new FlowLayout(FlowLayout.LEFT));
 

@@ -4,6 +4,8 @@ import model.objects.SlideObject;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.awt.*;
+
 
 public class SlidePage {
 
@@ -20,4 +22,5 @@ public class SlidePage {
     public List<SlideObject> getObjects() {
         return objects;
     }
+
 }

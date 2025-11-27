@@ -5,6 +5,7 @@ import model.SlideDocument;
 import model.factory.ShapeFactory;
 import model.objects.SlideObject;
 import view.SlideCanvas;
+import view.SlideListPanel;
 import command.*;
 
 import javax.swing.*;
@@ -17,14 +18,15 @@ public class CanvasController implements MouseListener, MouseMotionListener {
     private SelectionManager selectionManager;
     private ToolController toolController;
     private CommandManager commandManager;
-
+    private SlideListPanel slideListPanel;
     private MoveObjectCommand currentMoveCmd;
     private int lastX, lastY;
 
-    public CanvasController(DocumentContext context, SlideCanvas canvas,
+    public CanvasController(DocumentContext context,SlideListPanel  slideListPanel,SlideCanvas canvas,
                             SelectionManager selectionManager, ToolController toolController, CommandManager commandManager) {
         this.context = context;
         this.canvas = canvas;
+        this.slideListPanel = slideListPanel;
         this.selectionManager = selectionManager;
         this.toolController = toolController;
         this.commandManager = commandManager;
@@ -33,6 +35,13 @@ public class CanvasController implements MouseListener, MouseMotionListener {
         canvas.addMouseMotionListener(this);
     }
 
+
+    void refresh() {
+        canvas.refresh();
+        slideListPanel.refreshList();
+        int Index = context.getDocument().getCurrentPageIndex();
+        slideListPanel.refreshImages(Index);
+    }
     @Override
     public void mousePressed(MouseEvent e) {
         lastX = e.getX();
@@ -50,31 +59,31 @@ public class CanvasController implements MouseListener, MouseMotionListener {
                 if (selectionManager.hasSelection()) {
                     currentMoveCmd = new MoveObjectCommand(selectionManager.getSelected());
                 }
-                canvas.refresh();
+                refresh();
                 break;
 
             case RECT:
                 var rect = ShapeFactory.createShape(ShapeFactory.ShapeType.RECTANGLE, e.getX(), e.getY());
                 commandManager.executeCommand(new AddObjectCommand(context.getDocument(), rect));
-                canvas.refresh();
+                refresh();
                 break;
 
             case ELLIPSE:
                 var ellipse = ShapeFactory.createShape(ShapeFactory.ShapeType.ELLIPSE, e.getX(), e.getY());
                 commandManager.executeCommand(new AddObjectCommand(context.getDocument(), ellipse));
-                canvas.refresh();
+                refresh();
                 break;
 
             case LINE:
                 var line = ShapeFactory.createShape(ShapeFactory.ShapeType.LINE, e.getX(), e.getY());
                 commandManager.executeCommand(new AddObjectCommand(context.getDocument(), line));
-                canvas.refresh();
+                refresh();
                 break;
 
             case TEXT:
                 var text = ShapeFactory.createShape(ShapeFactory.ShapeType.TEXT, e.getX(), e.getY());
                 commandManager.executeCommand(new AddObjectCommand(context.getDocument(), text));
-                canvas.refresh();
+                refresh();
                 break;
 
             case IMAGE:
@@ -86,7 +95,7 @@ public class CanvasController implements MouseListener, MouseMotionListener {
                         commandManager.executeCommand(new AddObjectCommand(context.getDocument(), img));
                     }
                 }
-                canvas.refresh();
+                refresh();
                 break;
         }
     }
@@ -109,7 +118,7 @@ public class CanvasController implements MouseListener, MouseMotionListener {
         lastX = e.getX();
         lastY = e.getY();
 
-        canvas.refresh();
+        refresh();
     }
 
 
