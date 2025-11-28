@@ -39,4 +39,8 @@ public class SlideDocument {
     public int getCurrentPageIndex() {
         return currentPageIndex;
     }
+
+    public void insertPage(int index, SlidePage page) {
+        pages.add(index, page);
+    }
 }

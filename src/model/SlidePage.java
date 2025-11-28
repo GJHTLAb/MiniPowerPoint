@@ -11,6 +11,14 @@ public class SlidePage {
 
     private final List<SlideObject> objects = new ArrayList<>();
 
+    public SlidePage(SlidePage original) {
+        objects.addAll(original.getObjects());
+    }
+
+    public SlidePage() {
+
+    }
+
     public void addObject(SlideObject obj) {
         objects.add(obj);
     }
@@ -22,5 +30,6 @@ public class SlidePage {
     public List<SlideObject> getObjects() {
         return objects;
     }
+
 
 }

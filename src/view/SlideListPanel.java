@@ -2,10 +2,14 @@ package view;
 
 import context.DocumentContext;
 import model.SlidePage;
+import controller.SlideListPanelController;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseWheelEvent;
+import java.awt.event.MouseWheelListener;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,20 +17,21 @@ public class SlideListPanel extends JPanel {
 
     private DocumentContext context;
     private SlideCanvas canvas;
-    private List<JPanel> pagePanels = new ArrayList<>(); // 改为存储包含页码和按钮的面板
+    private List<JPanel> pagePanels = new ArrayList<>();
     private double scale;
-    private JScrollPane scrollPane; // 添加滚动面板
-    private JPanel contentPanel; // 内容面板
-    private int scrollPosition = 0;
-    private int maxScroll = 0;
-
-    // 将右键菜单声明为类级别的成员变量
-    private JPopupMenu popupMenu;
 
     // 常量定义
     private static final int PANEL_WIDTH = 220;
     private static final int THUMBNAIL_MARGIN = 10;
     private static final int PAGE_NUMBER_HEIGHT = 25;
+
+    // Controller 引用
+    private SlideListPanelController controller;
+
+    // 滚动相关
+    private JScrollPane scrollPane;
+    private JPanel contentPanel;
+    private int scrollPosition = 0;
 
     public SlideListPanel(DocumentContext context, SlideCanvas canvas) {
         this.context = context;
@@ -35,7 +40,7 @@ public class SlideListPanel extends JPanel {
         setBackground(new Color(240, 240, 240));
         scale = 0.225;
 
-        // 使用BorderLayout作为主布局
+        // 使用 BorderLayout 作为主布局
         setLayout(new BorderLayout());
 
         // 创建内容面板
@@ -57,18 +62,43 @@ public class SlideListPanel extends JPanel {
 
         add(scrollPane, BorderLayout.CENTER);
 
-        // 初始化右键菜单
-        popupMenu = createPopupMenu();
-
         // 添加鼠标滚轮监听
         setupMouseWheelListening();
+
+        // 为内容面板添加鼠标监听器来处理空白区域右键点击
+        setupContentPanelMouseListener();
 
         refreshList();
     }
 
-    // 设置鼠标滚轮监听
+    /**
+     * 设置内容面板的鼠标监听器
+     */
+    private void setupContentPanelMouseListener() {
+        contentPanel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                if (SwingUtilities.isRightMouseButton(e)) {
+                    showGlobalPopupMenu(e);
+                }
+            }
+        });
+    }
+
+    /**
+     * 显示全局右键菜单
+     */
+    private void showGlobalPopupMenu(MouseEvent e) {
+        JPopupMenu globalMenu = createGlobalPopupMenu();
+        if (globalMenu != null) {
+            globalMenu.show(contentPanel, e.getX(), e.getY());
+        }
+    }
+
+    /**
+     * 设置鼠标滚轮监听
+     */
     private void setupMouseWheelListening() {
-        // 为滚动面板和内容面板都添加鼠标滚轮监听
         MouseWheelListener wheelListener = new MouseWheelListener() {
             @Override
             public void mouseWheelMoved(MouseWheelEvent e) {
@@ -86,37 +116,37 @@ public class SlideListPanel extends JPanel {
             }
         };
 
+        // 为多个组件添加滚轮监听
         scrollPane.addMouseWheelListener(wheelListener);
         contentPanel.addMouseWheelListener(wheelListener);
-
-        // 也为当前面板添加监听
         this.addMouseWheelListener(wheelListener);
     }
 
-    // 检查是否可以滚动
+    /**
+     * 检查是否可以滚动
+     */
     private boolean canScroll() {
         JScrollBar verticalBar = scrollPane.getVerticalScrollBar();
         return verticalBar.getMaximum() > verticalBar.getVisibleAmount();
     }
 
-    public void refreshImages(int Index) {
-        if (Index >= 0 && Index < pagePanels.size()) {
-            JPanel pagePanel = pagePanels.get(Index);
-            // 更新缩略图
-            JButton pageButton = (JButton) pagePanel.getComponent(1); // 第二个组件是按钮
-            pageButton.setIcon(new ImageIcon(canvas.renderThumbnail(Index, scale)));
-        }
+    /**
+     * 设置控制器
+     */
+    public void setController(SlideListPanelController controller) {
+        this.controller = controller;
     }
 
+    /**
+     * 刷新页面列表
+     */
     public void refreshList() {
         contentPanel.removeAll();
         pagePanels.clear();
 
-        // 获取所有页面
         List<SlidePage> pages = context.getDocument().getPages();
 
         for (int i = 0; i < pages.size(); i++) {
-            // 创建单个页面的容器面板
             JPanel pagePanel = createPagePanel(i);
             pagePanels.add(pagePanel);
             contentPanel.add(pagePanel);
@@ -125,14 +155,41 @@ public class SlideListPanel extends JPanel {
         // 添加弹性空间以推动所有内容向上
         contentPanel.add(Box.createVerticalGlue());
 
-        revalidate();
-        repaint();
+        contentPanel.revalidate();
+        contentPanel.repaint();
 
         // 更新滚动限制
         updateScrollLimits();
     }
 
-    // 创建单个页面的面板（包含页码和缩略图按钮）
+    /**
+     * 更新滚动限制
+     */
+    private void updateScrollLimits() {
+        SwingUtilities.invokeLater(() -> {
+            JScrollBar verticalBar = scrollPane.getVerticalScrollBar();
+            // 确保滚动位置有效
+            if (verticalBar.getValue() > verticalBar.getMaximum() - verticalBar.getVisibleAmount()) {
+                verticalBar.setValue(verticalBar.getMaximum() - verticalBar.getVisibleAmount());
+            }
+        });
+    }
+
+    /**
+     * 刷新指定页面的缩略图
+     */
+    public void refreshImages(int index) {
+        if (index >= 0 && index < pagePanels.size()) {
+            JPanel pagePanel = pagePanels.get(index);
+            JButton pageButton = (JButton) pagePanel.getComponent(1);
+            pageButton.setIcon(new ImageIcon(canvas.renderThumbnail(index, scale)));
+            updatePageHighlight();
+        }
+    }
+
+    /**
+     * 创建单个页面面板
+     */
     private JPanel createPagePanel(int pageIndex) {
         JPanel pagePanel = new JPanel();
         pagePanel.setLayout(new BorderLayout());
@@ -140,11 +197,28 @@ public class SlideListPanel extends JPanel {
         pagePanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 
         // 创建页码标签
+        JLabel pageNumberLabel = createPageNumberLabel(pageIndex);
+
+        // 创建缩略图按钮
+        JButton pageButton = createThumbnailButton(pageIndex);
+
+        // 将组件添加到面板
+        pagePanel.add(pageNumberLabel, BorderLayout.NORTH);
+        pagePanel.add(pageButton, BorderLayout.CENTER);
+        pagePanel.add(Box.createRigidArea(new Dimension(0, 5)), BorderLayout.SOUTH);
+
+        return pagePanel;
+    }
+
+    /**
+     * 创建页码标签
+     */
+    private JLabel createPageNumberLabel(int pageIndex) {
         JLabel pageNumberLabel = new JLabel("Page " + (pageIndex + 1));
         pageNumberLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
         pageNumberLabel.setForeground(new Color(80, 80, 80));
         pageNumberLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        pageNumberLabel.setPreferredSize(new Dimension(PANEL_WIDTH - 10, PAGE_NUMBER_HEIGHT));
+        pageNumberLabel.setPreferredSize(new Dimension(PANEL_WIDTH - 20, PAGE_NUMBER_HEIGHT));
         pageNumberLabel.setOpaque(true);
         pageNumberLabel.setBackground(new Color(225, 225, 225));
         pageNumberLabel.setBorder(BorderFactory.createCompoundBorder(
@@ -152,7 +226,13 @@ public class SlideListPanel extends JPanel {
                 BorderFactory.createEmptyBorder(2, 5, 2, 5)
         ));
 
-        // 创建缩略图按钮
+        return pageNumberLabel;
+    }
+
+    /**
+     * 创建缩略图按钮
+     */
+    private JButton createThumbnailButton(int pageIndex) {
         JButton pageButton = new JButton();
         pageButton.setIcon(new ImageIcon(canvas.renderThumbnail(pageIndex, scale)));
 
@@ -161,6 +241,8 @@ public class SlideListPanel extends JPanel {
         int buttonWidth = Math.min(icon.getIconWidth() + THUMBNAIL_MARGIN, PANEL_WIDTH - 20);
         int buttonHeight = icon.getIconHeight() + THUMBNAIL_MARGIN;
         pageButton.setPreferredSize(new Dimension(buttonWidth, buttonHeight));
+
+        // 设置按钮样式
         pageButton.setBackground(Color.WHITE);
         pageButton.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(new Color(180, 180, 180), 1),
@@ -169,57 +251,104 @@ public class SlideListPanel extends JPanel {
         pageButton.setContentAreaFilled(true);
         pageButton.setFocusPainted(false);
 
-        // 添加鼠标悬停效果
-        pageButton.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                pageButton.setBorder(BorderFactory.createCompoundBorder(
-                        BorderFactory.createLineBorder(new Color(100, 150, 255), 2),
-                        BorderFactory.createEmptyBorder(4, 4, 4, 4)
-                ));
+        // 为每个按钮设置独立的右键菜单
+        pageButton.setComponentPopupMenu(createButtonPopupMenu(pageIndex));
+
+        // 左键点击选择页面
+        pageButton.addActionListener(e -> {
+            if (controller != null) {
+                controller.selectPage(pageIndex);
+            }
+        });
+
+        // 悬停效果
+        pageButton.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                if (pageIndex != context.getDocument().getCurrentPageIndex()) {
+                    pageButton.setBorder(BorderFactory.createCompoundBorder(
+                            BorderFactory.createLineBorder(new Color(100, 150, 255), 2),
+                            BorderFactory.createEmptyBorder(4, 4, 4, 4)
+                    ));
+                }
             }
 
-            @Override
-            public void mouseExited(MouseEvent e) {
-                pageButton.setBorder(BorderFactory.createCompoundBorder(
-                        BorderFactory.createLineBorder(new Color(180, 180, 180), 1),
-                        BorderFactory.createEmptyBorder(5, 5, 5, 5)
-                ));
-            }
-
-            @Override
-            public void mousePressed(MouseEvent e) {
-                if (SwingUtilities.isRightMouseButton(e)) {
-                    // 右键点击页面按钮
-                    popupMenu.show(pageButton, e.getX(), e.getY());
-                } else if (SwingUtilities.isLeftMouseButton(e)) {
-                    context.getDocument().setCurrentPage(pageIndex);
-                    canvas.setPage(context.getDocument().getCurrentPage());
-                    // 高亮显示当前选中的页面
-                    highlightCurrentPage(pageIndex);
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                if (pageIndex != context.getDocument().getCurrentPageIndex()) {
+                    pageButton.setBorder(BorderFactory.createCompoundBorder(
+                            BorderFactory.createLineBorder(new Color(180, 180, 180), 1),
+                            BorderFactory.createEmptyBorder(5, 5, 5, 5)
+                    ));
                 }
             }
         });
 
-        // 将页码标签和按钮添加到页面面板
-        pagePanel.add(pageNumberLabel, BorderLayout.NORTH);
-        pagePanel.add(pageButton, BorderLayout.CENTER);
-
-        // 添加一些间距
-        pagePanel.add(Box.createRigidArea(new Dimension(0, 5)), BorderLayout.SOUTH);
-
-        return pagePanel;
+        return pageButton;
     }
 
-    // 高亮显示当前选中的页面
-    private void highlightCurrentPage(int currentIndex) {
+    /**
+     * 创建按钮的右键菜单
+     */
+    private JPopupMenu createButtonPopupMenu(int pageIndex) {
+        JPopupMenu menu = new JPopupMenu();
+
+        JMenuItem selectItem = new JMenuItem("Select Page");
+        selectItem.addActionListener(e -> {
+            if (controller != null) {
+                controller.selectPage(pageIndex);
+            }
+        });
+        menu.add(selectItem);
+
+        menu.addSeparator();
+
+        JMenuItem deleteItem = new JMenuItem("Delete Page");
+        deleteItem.addActionListener(e -> {
+            if (controller != null) {
+                controller.deletePage(pageIndex);
+            }
+        });
+        menu.add(deleteItem);
+
+        JMenuItem duplicateItem = new JMenuItem("Duplicate Page");
+        duplicateItem.addActionListener(e -> {
+            if (controller != null) {
+                controller.duplicatePage(pageIndex);
+            }
+        });
+        menu.add(duplicateItem);
+
+        return menu;
+    }
+
+    /**
+     * 创建全局右键菜单（用于空白区域）
+     */
+    private JPopupMenu createGlobalPopupMenu() {
+        JPopupMenu menu = new JPopupMenu();
+
+        JMenuItem newPageItem = new JMenuItem("New Page");
+        newPageItem.addActionListener(e -> {
+            if (controller != null) {
+                controller.addNewPage();
+            }
+        });
+        menu.add(newPageItem);
+
+        return menu;
+    }
+
+    /**
+     * 更新页面高亮显示
+     */
+    private void updatePageHighlight() {
+        int currentIndex = context.getDocument().getCurrentPageIndex();
+
         for (int i = 0; i < pagePanels.size(); i++) {
             JPanel pagePanel = pagePanels.get(i);
             JLabel pageNumberLabel = (JLabel) pagePanel.getComponent(0);
             JButton pageButton = (JButton) pagePanel.getComponent(1);
 
             if (i == currentIndex) {
-                // 当前选中的页面
                 pageNumberLabel.setBackground(new Color(100, 150, 255));
                 pageNumberLabel.setForeground(Color.WHITE);
                 pageButton.setBorder(BorderFactory.createCompoundBorder(
@@ -227,7 +356,6 @@ public class SlideListPanel extends JPanel {
                         BorderFactory.createEmptyBorder(4, 4, 4, 4)
                 ));
             } else {
-                // 未选中的页面
                 pageNumberLabel.setBackground(new Color(225, 225, 225));
                 pageNumberLabel.setForeground(new Color(80, 80, 80));
                 pageButton.setBorder(BorderFactory.createCompoundBorder(
@@ -238,49 +366,9 @@ public class SlideListPanel extends JPanel {
         }
     }
 
-    // 更新滚动限制
-    private void updateScrollLimits() {
-        SwingUtilities.invokeLater(() -> {
-            JScrollBar verticalBar = scrollPane.getVerticalScrollBar();
-            maxScroll = Math.max(0, verticalBar.getMaximum() - verticalBar.getVisibleAmount());
-        });
-    }
-
-    // 创建右键菜单
-    private JPopupMenu createPopupMenu() {
-        JPopupMenu popupMenu = new JPopupMenu();
-
-        // 新建页面选项
-        JMenuItem newPageItem = new JMenuItem("New Page");
-        newPageItem.addActionListener(e -> {
-            context.getDocument().addPage(new SlidePage());
-            refreshList();
-            // 自动滚动到新页面
-            SwingUtilities.invokeLater(() -> {
-                JScrollBar verticalBar = scrollPane.getVerticalScrollBar();
-                verticalBar.setValue(verticalBar.getMaximum());
-            });
-        });
-        popupMenu.add(newPageItem);
-
-        // 删除页面选项
-        JMenuItem deletePageItem = new JMenuItem("Delete Page");
-        deletePageItem.addActionListener(e -> {
-            int currentPageIndex = context.getDocument().getCurrentPageIndex();
-            if (context.getDocument().getPages().size() > 1) {
-                context.getDocument().removePage(currentPageIndex);
-                refreshList();
-                canvas.refresh();
-            } else {
-                JOptionPane.showMessageDialog(SlideListPanel.this, "Cannot delete the last page.");
-            }
-        });
-        popupMenu.add(deletePageItem);
-
-        return popupMenu;
-    }
-
-    // 现代化的滚动条UI
+    /**
+     * 现代化的滚动条UI
+     */
     private static class ModernScrollBarUI extends javax.swing.plaf.basic.BasicScrollBarUI {
         private static final int SCROLL_BAR_WIDTH = 8;
         private static final Color THUMB_COLOR = new Color(150, 150, 150, 150);
