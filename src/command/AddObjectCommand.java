@@ -25,6 +25,6 @@ public class AddObjectCommand extends Command {
     @Override
     public void undo() {
         System.out.println("undo object=" + object);
-        document.getCurrentPage().removeObject(object);
+        document.getPage(PageIndex).getObjects().remove(object);
     }
 }

@@ -1,8 +1,8 @@
 package view;
 
 import context.DocumentContext;
-import model.SlidePage;
 import controller.SlideListPanelController;
+import model.SlidePage;
 
 import javax.swing.*;
 import java.awt.*;
@@ -223,6 +223,7 @@ public class SlideListPanel extends JPanel {
         pagePanel.setLayout(new BorderLayout());
         pagePanel.setBackground(new Color(240, 240, 240));
         pagePanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+        pagePanel.setMaximumSize(new Dimension(PANEL_WIDTH, 200));
 
         // 创建页码标签
         JLabel pageNumberLabel = createPageNumberLabel(pageIndex);
@@ -267,9 +268,9 @@ public class SlideListPanel extends JPanel {
         // 计算合适的按钮大小
         ImageIcon icon = (ImageIcon) pageButton.getIcon();
         int buttonWidth = Math.min(icon.getIconWidth() + THUMBNAIL_MARGIN, PANEL_WIDTH - 20);
-        int buttonHeight = icon.getIconHeight() + THUMBNAIL_MARGIN;
+        int buttonHeight = Math.min(icon.getIconHeight() + THUMBNAIL_MARGIN, 150 ); // 添加高度限制，最大150像素
         pageButton.setPreferredSize(new Dimension(buttonWidth, buttonHeight));
-
+        pageButton.setMaximumSize(new Dimension(PANEL_WIDTH - 20, 160)); // 添加最大尺寸限制
         // 设置按钮样式
         pageButton.setBackground(Color.WHITE);
         pageButton.setBorder(BorderFactory.createCompoundBorder(
@@ -301,11 +302,14 @@ public class SlideListPanel extends JPanel {
             }
 
             public void mouseExited(java.awt.event.MouseEvent evt) {
-                if (pageIndex != context.getDocument().getCurrentPageIndex()) {
-                    pageButton.setBorder(BorderFactory.createCompoundBorder(
-                            BorderFactory.createLineBorder(new Color(180, 180, 180), 1),
-                            BorderFactory.createEmptyBorder(5, 5, 5, 5)
-                    ));
+                // 确保鼠标真的离开了按钮区域
+                if (!pageButton.getBounds().contains(evt.getPoint())) {
+                    if (pageIndex != context.getDocument().getCurrentPageIndex()) {
+                        pageButton.setBorder(BorderFactory.createCompoundBorder(
+                                BorderFactory.createLineBorder(new Color(180, 180, 180), 1),
+                                BorderFactory.createEmptyBorder(5, 5, 5, 5)
+                        ));
+                    }
                 }
             }
         });
@@ -334,6 +338,14 @@ public class SlideListPanel extends JPanel {
         insertButton.setText("+ Insert Page");
 
         // 点击事件 - 在指定位置插入新页面
+
+        insertButton.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                resetAdjacentPageButtonsHover(insertPosition);
+            }
+        });
+
         insertButton.addActionListener(e -> {
             if (controller != null) {
                 controller.insertPageAt(insertButton.getInsertPosition());
@@ -363,6 +375,32 @@ public class SlideListPanel extends JPanel {
         });
 
         return insertButton;
+    }
+
+    private void resetAdjacentPageButtonsHover(int insertPosition) {
+        // 重置插入位置之前的页面按钮
+        if (insertPosition > 0 && insertPosition - 1 < pagePanels.size()) {
+            JPanel prevPagePanel = pagePanels.get(insertPosition - 1);
+            JButton prevPageButton = (JButton) prevPagePanel.getComponent(1);
+            if (insertPosition - 1 != context.getDocument().getCurrentPageIndex()) {
+                prevPageButton.setBorder(BorderFactory.createCompoundBorder(
+                        BorderFactory.createLineBorder(new Color(180, 180, 180), 1),
+                        BorderFactory.createEmptyBorder(5, 5, 5, 5)
+                ));
+            }
+        }
+
+        // 重置插入位置之后的页面按钮
+        if (insertPosition < pagePanels.size()) {
+            JPanel nextPagePanel = pagePanels.get(insertPosition);
+            JButton nextPageButton = (JButton) nextPagePanel.getComponent(1);
+            if (insertPosition != context.getDocument().getCurrentPageIndex()) {
+                nextPageButton.setBorder(BorderFactory.createCompoundBorder(
+                        BorderFactory.createLineBorder(new Color(180, 180, 180), 1),
+                        BorderFactory.createEmptyBorder(5, 5, 5, 5)
+                ));
+            }
+        }
     }
 
     /**

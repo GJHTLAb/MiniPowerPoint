@@ -105,23 +105,9 @@ public class MainWindow extends JFrame {
             return true;
         }
 
-        // 对于其他组件，只在特定情况下刷新
-        return isSignificantInteraction(source, event);
+        return true;
     }
 
-    /**
-     * 判断是否是重要的交互
-     */
-    private boolean isSignificantInteraction(Component source, MouseEvent event) {
-        // 排除菜单、工具栏等组件的常规交互
-        if (source instanceof JMenu || source instanceof JToolBar) {
-            return false;
-        }
-
-        // 主要监听画布区域的交互
-        return source instanceof Container &&
-                ((Container)source).isAncestorOf(canvas);
-    }
 
     private void refreshAllDisplays() {
         // 您的刷新逻辑
