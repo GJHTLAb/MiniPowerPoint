@@ -48,7 +48,7 @@ public class CanvasController implements MouseListener, MouseMotionListener {
         lastY = e.getY();
 
         ToolController.ToolType tool = toolController.getCurrentTool();
-
+        int PageIndex = context.getDocument().getCurrentPageIndex();
         switch (tool) {
 
             case SELECT:
@@ -64,25 +64,25 @@ public class CanvasController implements MouseListener, MouseMotionListener {
 
             case RECT:
                 var rect = ShapeFactory.createShape(ShapeFactory.ShapeType.RECTANGLE, e.getX(), e.getY());
-                commandManager.executeCommand(new AddObjectCommand(context.getDocument(), rect));
+                commandManager.executeCommand(new AddObjectCommand(context.getDocument(), rect,PageIndex));
                 refresh();
                 break;
 
             case ELLIPSE:
                 var ellipse = ShapeFactory.createShape(ShapeFactory.ShapeType.ELLIPSE, e.getX(), e.getY());
-                commandManager.executeCommand(new AddObjectCommand(context.getDocument(), ellipse));
+                commandManager.executeCommand(new AddObjectCommand(context.getDocument(), ellipse,PageIndex));
                 refresh();
                 break;
 
             case LINE:
                 var line = ShapeFactory.createShape(ShapeFactory.ShapeType.LINE, e.getX(), e.getY());
-                commandManager.executeCommand(new AddObjectCommand(context.getDocument(), line));
+                commandManager.executeCommand(new AddObjectCommand(context.getDocument(), line,PageIndex));
                 refresh();
                 break;
 
             case TEXT:
                 var text = ShapeFactory.createShape(ShapeFactory.ShapeType.TEXT, e.getX(), e.getY());
-                commandManager.executeCommand(new AddObjectCommand(context.getDocument(), text));
+                commandManager.executeCommand(new AddObjectCommand(context.getDocument(), text,PageIndex));
                 refresh();
                 break;
 
@@ -92,7 +92,7 @@ public class CanvasController implements MouseListener, MouseMotionListener {
                     String path = chooser.getSelectedFile().getAbsolutePath();
                     var img = model.factory.ImageFactory.createImage(e.getX(), e.getY(), path);
                     if (img != null) {
-                        commandManager.executeCommand(new AddObjectCommand(context.getDocument(), img));
+                        commandManager.executeCommand(new AddObjectCommand(context.getDocument(), img,PageIndex));
                     }
                 }
                 refresh();

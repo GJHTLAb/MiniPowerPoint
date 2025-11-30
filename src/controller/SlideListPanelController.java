@@ -22,7 +22,6 @@ public class SlideListPanelController {
         this.canvas = canvas;
         this.slideListPanel = slideListPanel;
         this.commandManager = commandManager;
-        refresh();
     }
 
     public void refresh() {
@@ -39,8 +38,15 @@ public class SlideListPanelController {
             if (canvas != null) {
                 canvas.setPage(context.getDocument().getCurrentPage());
             }
-            refresh();
         }
+    }
+
+    public void insertPageAt(int position) {
+        // 在指定位置插入新页面的逻辑
+        SlidePage newPage = new SlidePage();
+        AddPageCommand cmd = new AddPageCommand(context.getDocument(), newPage,position);
+        commandManager.executeCommand(cmd);
+        selectPage(position);
     }
 
     public void addNewPage() {
@@ -50,7 +56,6 @@ public class SlideListPanelController {
 
         int newPageIndex = context.getDocument().getPages().size() - 1;
         selectPage(newPageIndex);
-        refresh();
     }
 
     public void deletePage(int pageIndex) {
@@ -65,7 +70,6 @@ public class SlideListPanelController {
             } else {
                 JOptionPane.showMessageDialog(slideListPanel, "Cannot delete the last page.");
             }
-            refresh();
         }
     }
 
@@ -78,7 +82,6 @@ public class SlideListPanelController {
 
             int newPageIndex = getPageCount() - 1;
             selectPage(newPageIndex);
-            refresh();
         }
     }
 

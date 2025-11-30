@@ -18,12 +18,14 @@ public class SlideListPanel extends JPanel {
     private DocumentContext context;
     private SlideCanvas canvas;
     private List<JPanel> pagePanels = new ArrayList<>();
+    private List<InsertButton> insertButtons = new ArrayList<>();
     private double scale;
 
     // 常量定义
     private static final int PANEL_WIDTH = 220;
     private static final int THUMBNAIL_MARGIN = 10;
     private static final int PAGE_NUMBER_HEIGHT = 25;
+    private static final int INSERT_BUTTON_HEIGHT = 20;
 
     // Controller 引用
     private SlideListPanelController controller;
@@ -143,13 +145,27 @@ public class SlideListPanel extends JPanel {
     public void refreshList() {
         contentPanel.removeAll();
         pagePanels.clear();
+        insertButtons.clear();
 
         List<SlidePage> pages = context.getDocument().getPages();
 
         for (int i = 0; i < pages.size(); i++) {
+            // 在第一个页面之前添加插入按钮
+            if (i == 0) {
+                InsertButton insertButton = createInsertButton(0);
+                insertButtons.add(insertButton);
+                contentPanel.add(insertButton);
+            }
+
+            // 添加页面面板
             JPanel pagePanel = createPagePanel(i);
             pagePanels.add(pagePanel);
             contentPanel.add(pagePanel);
+
+            // 在每个页面之后添加插入按钮（最后一个页面之后也添加）
+            InsertButton insertButton = createInsertButton(i + 1);
+            insertButtons.add(insertButton);
+            contentPanel.add(insertButton);
         }
 
         // 添加弹性空间以推动所有内容向上
@@ -160,6 +176,18 @@ public class SlideListPanel extends JPanel {
 
         // 更新滚动限制
         updateScrollLimits();
+
+        // 更新插入按钮的可见性
+        updateInsertButtonsVisibility();
+    }
+
+    /**
+     * 更新插入按钮的可见性
+     */
+    private void updateInsertButtonsVisibility() {
+        for (InsertButton insertButton : insertButtons) {
+            insertButton.setVisible(true); // 可以根据需要调整可见性逻辑
+        }
     }
 
     /**
@@ -286,6 +314,73 @@ public class SlideListPanel extends JPanel {
     }
 
     /**
+     * 创建插入按钮
+     */
+    private InsertButton createInsertButton(int insertPosition) {
+        InsertButton insertButton = new InsertButton(insertPosition);
+
+        // 设置按钮样式
+        insertButton.setPreferredSize(new Dimension(PANEL_WIDTH - 20, INSERT_BUTTON_HEIGHT));
+        insertButton.setMaximumSize(new Dimension(PANEL_WIDTH - 20, INSERT_BUTTON_HEIGHT));
+        insertButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        insertButton.setBackground(new Color(240, 240, 240));
+        insertButton.setForeground(new Color(100, 100, 100));
+        insertButton.setFocusPainted(false);
+        insertButton.setBorder(BorderFactory.createEmptyBorder(2, 5, 2, 5));
+        insertButton.setContentAreaFilled(false);
+
+        insertButton.setFont(new Font("Segoe UI", Font.PLAIN, 10));
+        insertButton.setText("+ Insert Page");
+
+        // 点击事件 - 在指定位置插入新页面
+        insertButton.addActionListener(e -> {
+            if (controller != null) {
+                controller.insertPageAt(insertButton.getInsertPosition());
+            }
+        });
+
+        // 悬停效果
+        insertButton.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                insertButton.setContentAreaFilled(true);
+                insertButton.setBackground(new Color(100, 150, 255, 50));
+                insertButton.setForeground(new Color(100, 150, 255));
+                insertButton.setBorder(BorderFactory.createCompoundBorder(
+                        BorderFactory.createLineBorder(new Color(100, 150, 255), 1),
+                        BorderFactory.createEmptyBorder(2, 5, 2, 5)
+                ));
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                insertButton.setContentAreaFilled(false);
+                insertButton.setBackground(new Color(240, 240, 240));
+                insertButton.setForeground(new Color(100, 100, 100));
+                insertButton.setBorder(BorderFactory.createEmptyBorder(2, 5, 2, 5));
+            }
+        });
+
+        return insertButton;
+    }
+
+    /**
+     * 自定义插入按钮类，用于存储插入位置信息
+     */
+    private static class InsertButton extends JButton {
+        private final int insertPosition;
+
+        public InsertButton(int insertPosition) {
+            this.insertPosition = insertPosition;
+        }
+
+        public int getInsertPosition() {
+            return insertPosition;
+        }
+    }
+
+    /**
      * 创建按钮的右键菜单
      */
     private JPopupMenu createButtonPopupMenu(int pageIndex) {
@@ -317,6 +412,25 @@ public class SlideListPanel extends JPanel {
         });
         menu.add(duplicateItem);
 
+        // 添加插入相关的菜单项
+        menu.addSeparator();
+
+        JMenuItem insertBeforeItem = new JMenuItem("Insert Before");
+        insertBeforeItem.addActionListener(e -> {
+            if (controller != null) {
+                controller.insertPageAt(pageIndex);
+            }
+        });
+        menu.add(insertBeforeItem);
+
+        JMenuItem insertAfterItem = new JMenuItem("Insert After");
+        insertAfterItem.addActionListener(e -> {
+            if (controller != null) {
+                controller.insertPageAt(pageIndex + 1);
+            }
+        });
+        menu.add(insertAfterItem);
+
         return menu;
     }
 
@@ -329,7 +443,7 @@ public class SlideListPanel extends JPanel {
         JMenuItem newPageItem = new JMenuItem("New Page");
         newPageItem.addActionListener(e -> {
             if (controller != null) {
-                controller.addNewPage();
+                controller.addNewPage(); // 在末尾添加新页面
             }
         });
         menu.add(newPageItem);

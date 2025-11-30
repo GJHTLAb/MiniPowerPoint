@@ -58,8 +58,6 @@ public class SlideCanvas extends JPanel {
         int thumbWidth = (int) (this.getWidth() * scale);
         int  thumbHeight = (int) (this.getHeight() * scale);
 
-        System.out.println("thumbWidth: " + thumbWidth + " thumbHeight: " + thumbHeight);
-
         if(thumbWidth ==0 || thumbHeight ==0) {
             return new BufferedImage(217, 157, BufferedImage.TYPE_INT_ARGB);
         }
