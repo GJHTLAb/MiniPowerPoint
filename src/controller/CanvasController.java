@@ -267,7 +267,7 @@ public class CanvasController implements MouseListener, MouseMotionListener {
                 img.setHeight(50);
 
                 // 2️⃣ 加入文档并立即刷新显示占位
-                commandManager.executeCommand(new AddObjectCommand(context.getDocument(), img));
+                commandManager.executeCommand(new AddObjectCommand(context.getDocument(), img, context.getDocument().getCurrentPageIndex()));
                 canvas.setPreviewShape(img);
                 creating = true;
                 startX = e.getX();
@@ -466,7 +466,7 @@ public class CanvasController implements MouseListener, MouseMotionListener {
 
         if (creating && previewShape != null) {
             // 加入文档
-            commandManager.executeCommand(new AddObjectCommand(context.getDocument(), previewShape));
+            commandManager.executeCommand(new AddObjectCommand(context.getDocument(), previewShape, context.getDocument().getCurrentPageIndex()));
 
             // 清空预览
             previewShape = null;
