@@ -35,4 +35,16 @@ public class SlideDocument {
     public List<SlidePage> getPages() {
         return pages;
     }
+
+    public int getCurrentPageIndex() {
+        return currentPageIndex;
+    }
+
+    public void insertPage(int index, SlidePage page) {
+        pages.add(index, page);
+    }
+
+    public SlidePage getPage(int index) {
+        return pages.get(index);
+    }
 }

@@ -15,6 +15,11 @@ import model.objects.RectObject;
 import model.objects.SlideObject;
 import model.objects.TextObject;
 import view.SlideCanvas;
+import view.SlideListPanel;
+import command.*;
+
+import javax.swing.*;
+import java.awt.event.*;
 
 public class CanvasController implements MouseListener, MouseMotionListener {
 
@@ -26,6 +31,7 @@ public class CanvasController implements MouseListener, MouseMotionListener {
     private TextObject editingText = null;
 
 
+    private SlideListPanel slideListPanel;
     private MoveObjectCommand currentMoveCmd;
     private int lastX, lastY;
     private int startX, startY;
@@ -47,10 +53,11 @@ public class CanvasController implements MouseListener, MouseMotionListener {
 
 
 
-    public CanvasController(DocumentContext context, SlideCanvas canvas,
+    public CanvasController(DocumentContext context,SlideListPanel  slideListPanel,SlideCanvas canvas,
                             SelectionManager selectionManager, ToolController toolController, CommandManager commandManager) {
         this.context = context;
         this.canvas = canvas;
+        this.slideListPanel = slideListPanel;
         this.selectionManager = selectionManager;
         this.toolController = toolController;
         this.commandManager = commandManager;
@@ -80,6 +87,12 @@ public class CanvasController implements MouseListener, MouseMotionListener {
     }
 
 
+    void refresh() {
+        canvas.refresh();
+        slideListPanel.refreshList();
+        int Index = context.getDocument().getCurrentPageIndex();
+        slideListPanel.refreshImages(Index);
+    }
     @Override
     public void mousePressed(MouseEvent e) {
         lastX = e.getX();
