@@ -12,6 +12,7 @@ public class SelectionManager {
 
     public void setSelected(SlideObject obj) {
         this.selected = obj;
+        System.out.println(obj);
     }
 
     public void clearSelection() {

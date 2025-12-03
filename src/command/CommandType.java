@@ -2,5 +2,6 @@ package command;
 
 public enum CommandType {
     AddObject,
-    MoveObject
+    MoveObject,
+    RemoveObject
 }
